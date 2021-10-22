@@ -195,7 +195,7 @@ class ResNet(nn.Module):
                             self.base_width, previous_dilation, norm_layer))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, groups=self.groups,
+            layers.append(block(self.inplanes, planes, stride=1, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
                                 norm_layer=norm_layer))
 
@@ -208,9 +208,7 @@ class ResNet(nn.Module):
         x = self.conv3(x)
         x = self.maxpool(x)
         x = self.layer1(x)
-
         x = self.layer2(x)
-        print(x.shape)
         x = self.layer3(x)
         x = self.layer4(x)
 
@@ -233,9 +231,10 @@ def resnet50():
 
 if __name__ == "__main__":
 
-    data = torch.rand(10, 3, 32, 100)
+    data = torch.rand(1, 3, 32, 100)
     net = resnet50()
     out = net(data)
+    print(out.shape)
     # print(out.shape)
     # for k, v in net.named_parameters():
     #     print(k, "::::::::", v.shape)

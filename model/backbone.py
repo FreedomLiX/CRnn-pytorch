@@ -25,7 +25,7 @@ class ConvBnReLu(nn.Module):
 
 
 class BottleneckBlock(nn.Module):
-    def __init__(self, in_ch,  out_ch, stride, shortcut=True):
+    def __init__(self, in_ch, out_ch, stride=1, shortcut=True):
         super(BottleneckBlock, self).__init__()
 
         self.conv0 = ConvBnReLu(in_ch, out_ch, k_size=1, act=True)
@@ -58,11 +58,16 @@ class Resnet(nn.Module):
     def __init__(self, layers=50):
         super(Resnet, self).__init__()
         assert layers in [18, 34, 50, 101, 152, 200]
-        if layers == 18:                              depth = [2, 2, 2, 2]
-        elif layers == 34 or layers == 50:            depth = [3, 4, 6, 3]
-        elif layers == 101:                           depth = [3, 4, 23, 3]
-        elif layers == 152:                           depth = [3, 8, 36, 3]
-        elif layers == 200:                           depth = [3, 12, 48, 3]
+        if layers == 18:
+            depths = [2, 2, 2, 2]
+        elif layers == 34 or layers == 50:
+            depths = [3, 4, 6, 3]
+        elif layers == 101:
+            depths = [3, 4, 23, 3]
+        elif layers == 152:
+            depths = [3, 8, 36, 3]
+        elif layers == 200:
+            depths = [3, 12, 48, 3]
         num_channels = [64, 256, 512, 1024] if layers >= 50 else [64, 64, 128, 256]
         num_filters = [64, 128, 256, 512]
         self.layers = layers
@@ -71,22 +76,42 @@ class Resnet(nn.Module):
         self.conv2 = ConvBnReLu(32, 32, 3)
         self.conv3 = ConvBnReLu(32, 64, 3)
         self.pool2d_max = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        # blocks
-        for block in depth:
-            pass
+
+        self.layer1 = self._make_layer(num_channels[0], num_filters[0], depths[0])
+        self.layer2 = self._make_layer(num_channels[1], num_filters[1], depths[1], stride=2)
+        self.layer3 = self._make_layer(num_channels[2], num_filters[2], depths[2], stride=2)
+        self.layer4 = self._make_layer(num_channels[3], num_filters[3], depths[3], stride=2)
+
         self.out_pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
 
     def forward(self, x):
         # x.shape Batch 3 32 100 or Batch 3 × 48 × 192
-        return self.pool2d_max(self.conv3(self.conv2(self.conv1(x))))
+        x = self.pool2d_max(self.conv3(self.conv2(self.conv1(x))))
+        print(x.shape)
+        x = self.layer1(x)
+        print(x.shape)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.out_pool(x)
+        return x
+
+    def _make_layer(self, in_ch, out_ch, blocks, stride=1):
+        layers = []
+        layers.append(BottleneckBlock(in_ch, out_ch, stride))
+        for _ in range(1, blocks):
+            layers.append(BottleneckBlock(in_ch, out_ch, stride=1))
+        return nn.Sequential(*layers)
 
 
 if __name__ == "__main__":
     from torchvision.models import ResNet
+
     data = torch.rand(10, 3, 32, 100)
-    # cbr = Resnet(50)
+    cbr = Resnet(50)
+    print(cbr(data).shape)
     # for k, v in cbr.named_parameters():
     #     print(k, "::::::::", v.shape)
-    net = BottleneckBlock(64, 128, stride=1)
-    for k, v in net.named_parameters():
-        print(k, "::::::::", v.shape)
+    # net = BottleneckBlock(64, 128, stride=2)
+    # for k, v in net.named_parameters():
+    #     print(k, "::::::::", v.shape)
