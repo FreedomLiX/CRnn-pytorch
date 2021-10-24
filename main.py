@@ -19,11 +19,16 @@ class CRNN_ResNet50_LSTM(nn.Module):
 
 if __name__ == "__main__":
     from torchsummary.torchsummary import summary
-    data = torch.rand(1, 3, 32, 100)
+    data = torch.rand(10, 3, 32, 100)
     net = CRNN_ResNet50_LSTM()
     out = net(data)
     print(out.shape)
-    for k, v in net.named_parameters():
-        print(k, "::::::::", v.shape)
+    predicts = out.permute(1, 0, 2)
+    print(predicts.shape)
+    N, B, _ = predicts.shape
+    preds_lengths = torch.tensor([N] * B)
+    print(preds_lengths)
+    # for k, v in net.named_parameters():
+    #     print(k, "::::::::", v.shape)
     # print(out.shape)
     # summary(net, input_size=(3, 32, 100))
