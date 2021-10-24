@@ -12,9 +12,12 @@ class CTCHead(nn.Module):
         super(CTCHead, self).__init__()
         self.mid_channels = mid_channels
         self.num_class = num_class
-        self.fc1 = nn.Linear(in_channels, self.num_class)
-        self.fc1 = nn.Linear(in_channels, self.mid_channels)
-        self.fc2 = nn.Linear(self.mid_channels, self.num_class)
+
+        if mid_channels is None:
+            self.fc = nn.Linear(in_channels, self.num_class)
+        else:
+            self.fc1 = nn.Linear(in_channels, self.mid_channels)
+            self.fc2 = nn.Linear(self.mid_channels, self.num_class)
 
     def forward(self, x):
         if self.mid_channels is None:
